@@ -1,6 +1,5 @@
-use std::{error::Error, result};
 
-async fn fetch_reel(url: &str) -> Result<(), Box<dyn Error + Send + Sync>> {
+async fn fetch_reel(url: &str) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     
     let mut video_downloaded = false;
 
@@ -161,7 +160,7 @@ async fn fetch_reel(url: &str) -> Result<(), Box<dyn Error + Send + Sync>> {
 }
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
+async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let args = std::env::args().collect::<Vec<_>>();
     if args.len() < 2 {
         eprintln!("Usage: {} <instagram_url>", args[0]);
