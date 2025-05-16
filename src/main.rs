@@ -1,4 +1,4 @@
-use std::{error::Error};
+use std::{error::Error, result};
 
 async fn fetch_reel(url: &str) -> Result<(), Box<dyn Error + Send + Sync>> {
     
@@ -48,6 +48,8 @@ async fn fetch_reel(url: &str) -> Result<(), Box<dyn Error + Send + Sync>> {
                         _ => continue,
                     };
 
+                    // Commence Json navigation hell
+
                     let video = json_script.get("require")
                         .and_then(|x| x.get(0))
                         .and_then(|x| x.get(3))
@@ -65,8 +67,6 @@ async fn fetch_reel(url: &str) -> Result<(), Box<dyn Error + Send + Sync>> {
                         Some(video) => video,
                         None => continue,
                     };
-                    
-                    //println!("Video: {:?}", video);
 
                     let video = video.get("xdt_api__v1__media__shortcode__web_info")
                         .or_else(|| video.get("xdt_api__v1__clips__home__connection_v2"))
@@ -81,24 +81,14 @@ async fn fetch_reel(url: &str) -> Result<(), Box<dyn Error + Send + Sync>> {
                         .or_else(|| video.get("items"));
 
                     let video = match video {
-                        Some(video) => video,
+                        Some(video) => video.get(0),
                         None => continue,
                     };
 
-                    let video = video.get(0);
-
-                    // let video = video.and_then(|x| x.get("media"))
-                    //         .and_then(|x| x.get("video_versions"))
-                    //         .or_else(|| video);
-                            
-                        
-                    // let video = video.and_then(|x| x.get(0))
-                    //         .and_then(|x| x.get("url"))
-                    // ;
-                    //println!("Video: {:?}", video);
-
                     match video {
                         Some(video) => {
+
+                            //Attempt downloading the video
 
                             let code = video["code"].as_str().unwrap_or("unknown");
                             let author = video["user"]["username"].as_str().unwrap_or("unknown");
@@ -182,10 +172,14 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let mut retries = 5;
 
-    while fetch_reel(url).await.is_err() && retries > 0 {
+    let mut result = fetch_reel(url).await;
+
+    while result.is_err() && retries > 1 {
+        println!("Error: {:?}", result.err());
         println!("Retrying...");
         tokio::time::sleep(tokio::time::Duration::from_secs(5)).await;
 
+        result = fetch_reel(url).await;
         retries -= 1;
     }
 
