@@ -63,21 +63,24 @@ async fn fetch_reel(url: &str) -> Result<(), Box<dyn std::error::Error + Send + 
                         .and_then(|x| x.get("data"));
 
                     let video = match video {
-                        Some(video) => video,
+                        Some(video) => 
+                        {
+                            video.get("xdt_api__v1__media__shortcode__web_info")
+                            .or_else(|| video.get("xdt_api__v1__clips__home__connection_v2"))
+                            .or_else(|| video.get("xdt_api__v1__clips__home__no__login__connection_v2"))
+                        },
                         None => continue,
                     };
-
-                    let video = video.get("xdt_api__v1__media__shortcode__web_info")
-                        .or_else(|| video.get("xdt_api__v1__clips__home__connection_v2"))
-                        .or_else(|| video.get("xdt_api__v1__clips__home__no__login__connection_v2"));
                     
                     let video = match video {
-                        Some(video) => video,
+                        Some(video) => 
+                        {
+                            video
+                            .get("edges")
+                            .or_else(|| video.get("items"))
+                        },
                         None => continue,
                     };
-                        
-                    let video = video.get("edges")
-                        .or_else(|| video.get("items"));
 
                     let video = match video {
                         Some(video) => video.get(0),
@@ -130,7 +133,10 @@ async fn fetch_reel(url: &str) -> Result<(), Box<dyn std::error::Error + Send + 
             }
             else {
 
-                return Ok(())
+                return Err(Box::new(std::io::Error::new(
+                    std::io::ErrorKind::Other,
+                    "Failed to fetch reel: No data scripts found",
+                )));
             }
 
 
